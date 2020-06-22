@@ -63,7 +63,16 @@ module CHIP(clk,
     end
 endmodule
 
-module Control_unit(clk, fanin)
+module Control_unit(clk,
+                    fanin,
+                    Branch,
+                    MemRead,
+                    MemtoReg,
+                    ALUOp0,
+                    ALUOp1,
+                    MemWrite,
+                    ALUSrc,
+                    RegWrite);
     input [6:0] fanin;
     output      Branch;
     output      MemRead;
