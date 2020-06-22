@@ -63,7 +63,7 @@ module CHIP(clk,
     end
 endmodule
 
-module Control_unit(fanin)
+module Control_unit(clk, fanin)
     input [6:0] fanin;
     output      Branch;
     output      MemRead;
@@ -73,6 +73,7 @@ module Control_unit(fanin)
     output      MemWrite;
     output      ALUSrc;
     output      RegWrite;
+    
     always @(posedge clk)
         
     end
