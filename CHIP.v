@@ -63,6 +63,21 @@ module CHIP(clk,
     end
 endmodule
 
+module Control_unit(fanin)
+    input [6:0] fanin;
+    output      Branch;
+    output      MemRead;
+    output      MemtoReg;
+    output      ALUOp1;
+    output      ALUOp0;
+    output      MemWrite;
+    output      ALUSrc;
+    output      RegWrite;
+    always @(posedge clk)
+        
+    end
+endmodule
+
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
    
     parameter BITS = 32;
