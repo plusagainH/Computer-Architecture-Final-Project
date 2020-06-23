@@ -64,6 +64,7 @@ module CHIP(clk,
 endmodule
 
 module Control_unit(clk,
+                    rst_n,
                     fanin,
                     Branch,
                     MemRead,
@@ -73,19 +74,78 @@ module Control_unit(clk,
                     MemWrite,
                     ALUSrc,
                     RegWrite);
+    input       clk,rst_n;
     input [6:0] fanin;
     output      Branch;
     output      MemRead;
     output      MemtoReg;
-    output      ALUOp1;
     output      ALUOp0;
+    output      ALUOp1;
     output      MemWrite;
     output      ALUSrc;
     output      RegWrite;
     
-    always @(posedge clk)
+    always @(posedge clk or fanin)
+        if(!fanin[6]&&fanin[5]&&fanin[4]&&!fanin[3]&&!fanin[2]&&fanin[1]&&fanin[0])begin //add,sub,mul
+            
+        end
         
+        if(!fanin[6]&&!fanin[5]&&!fanin[4]&&!fanin[3]&&!fanin[2]&&fanin[1]&&fanin[0])begin //lw
+            Branch = 1'b0;
+            MemRead = 1'b1;
+            MemtoReg = 1'b1;
+            ALUOp0 = 1'b0;
+            ALUOp1 = 1'b0;
+            MemWrite = 1'b0;
+            ALUSrc = 1'b1;
+            RegWrite = 1'b1;
+        end
+        if(!fanin[6]&&fanin[5]&&!fanin[4]&&!fanin[3]&&!fanin[2]&&fanin[1]&&fanin[0])begin //sw
+            Branch = 1'b0;
+            MemRead = 1'b0;
+            ALUOp0 = 1'b0;
+            ALUOp1 = 1'b0;
+            MemWrite = 1'b1;
+            ALUSrc = 1'b1;
+            RegWrite = 1'b0;
+        end
+        if(fanin[6]&&fanin[5]&&!fanin[4]&&!fanin[3]&&!fanin[2]&&fanin[1]&&fanin[0])begin //beq
+            Branch = 1'b1;
+            MemRead = 1'b0;
+            ALUOp0 = 1'b0;
+            ALUOp1 = 1'b1;
+            MemWrite = 1'b0;
+            ALUSrc = 1'b0;
+            RegWrite = 1'b0;
+        end
+        if(!fanin[6]&&!fanin[5]&&fanin[4]&&!fanin[3]&&fanin[2]&&fanin[1]&&fanin[0])begin //auipc
+            Branch = 1'b0;
+            MemRead = 1'b0;
+            MemtoReg = 1'b0;
+            ALUOp0 = 1'b0;
+            ALUOp1 = 1'b0;
+            MemWrite = 1'b0;
+            ALUSrc = 1'b1;
+            RegWrite = 1'b1;
+        end
+        if(fanin[6]&&fanin[5]&&!fanin[4]&&fanin[3]&&fanin[2]&&fanin[1]&&fanin[0])begin //jal
+            Branch = 1'b1;
+            MemRead = 1'b0;
+            MemtoReg = 1'b0;
+            MemWrite = 1'b0;
+            RegWrite = 1'b1;
+        end
+        if(fanin[6]&&fanin[5]&&!fanin[4]&&!fanin[3]&&fanin[2]&&fanin[1]&&fanin[0])begin //jalr
+            Branch = 1'b1;
+            MemRead = 1'b0;
+            MemWrite = 1'b0;
+            RegWrite = 1'b0;
+        end
+        if(!fanin[6]&&!fanin[5]&&fanin[4]&&!fanin[3]&&!fanin[2]&&fanin[1]&&fanin[0])begin //addi,slti
+        
+        end
     end
+
 endmodule
 
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
