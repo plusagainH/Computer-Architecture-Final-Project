@@ -34,6 +34,18 @@ module CHIP(clk,
     //---------------------------------------//
 
     // Todo: other wire/reg
+    Control_unit control(
+        .opcode(),
+        .funct7(),
+        .funct3(),
+        .Branch(),
+        .MemRead(mem_wen_D),
+        .MemtoReg(),
+        .ALUOp0(),
+        .ALUOp1(),
+        .MemWrite(),
+        .ALUSrc(),
+        .RegWrite(regWrite));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -89,109 +101,118 @@ module Control_unit(opcode,
     always @(posedge clk or opcode)
         if(!opcode[6]&&opcode[5]&&opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //add,sub,mul
             if(funct7[2])begin //sub
-                Branch = 1'b0;
-                MemRead = 1'b0;
-                MemtoReg = 1'b0;
-                ALUOp0 = 1'b0;
-                ALUOp1 = 1'b1;
-                MemWrite = 1'b0;
-                ALUSrc = 1'b0;
-                RegWrite = 1'b1;
+                Branch <= 1'b0;
+                MemRead <= 1'b0;
+                MemtoReg <= 1'b0;
+                ALUOp0 <= 1'b0;
+                ALUOp1 <= 1'b1;
+                MemWrite <= 1'b0;
+                ALUSrc <= 1'b0;
+                RegWrite <= 1'b1;
             end
             else begin //add,mul
                 if(funct7[0])begin //mul
-                    Branch = 1'b0;
-                    MemRead = 1'b0;
-                    MemtoReg = 1'b0;
-                    ALUOp0 = 1'b1;
-                    ALUOp1 = 1'b0;
-                    MemWrite = 1'b0;
-                    ALUSrc = 1'b0;
-                    RegWrite = 1'b1;
+                    Branch <= 1'b0;
+                    MemRead <= 1'b0;
+                    MemtoReg <= 1'b0;
+                    ALUOp0 <= 1'b1;
+                    ALUOp1 <= 1'b0;
+                    MemWrite <= 1'b0;
+                    ALUSrc <= 1'b0;
+                    RegWrite <= 1'b1;
                 end
                 else begin //add
-                    Branch = 1'b0;
-                    MemRead = 1'b0;
-                    MemtoReg = 1'b0;
-                    ALUOp0 = 1'b0;
-                    ALUOp1 = 1'b0;
-                    MemWrite = 1'b0;
-                    ALUSrc = 1'b0;
-                    RegWrite = 1'b1;
+                    Branch <= 1'b0;
+                    MemRead <= 1'b0;
+                    MemtoReg <= 1'b0;
+                    ALUOp0 <= 1'b0;
+                    ALUOp1 <= 1'b0;
+                    MemWrite <= 1'b0;
+                    ALUSrc <= 1'b0;
+                    RegWrite <= 1'b1;
                 end
             end
         end
-        if(!opcode[6]&&!opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //lw
-            Branch = 1'b0;
-            MemRead = 1'b1;
-            MemtoReg = 1'b1;
-            ALUOp0 = 1'b0;
-            ALUOp1 = 1'b0;
-            MemWrite = 1'b0;
-            ALUSrc = 1'b1;
-            RegWrite = 1'b1;
+        else if(!opcode[6]&&!opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //lw
+            Branch <= 1'b0;
+            MemRead <= 1'b1;
+            MemtoReg <= 1'b1;
+            ALUOp0 <= 1'b0;
+            ALUOp1 <= 1'b0;
+            MemWrite <= 1'b0;
+            ALUSrc <= 1'b1;
+            RegWrite <= 1'b1;
         end
-        if(!opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //sw
-            Branch = 1'b0;
-            MemRead = 1'b0;
-            ALUOp0 = 1'b0;
-            ALUOp1 = 1'b0;
-            MemWrite = 1'b1;
-            ALUSrc = 1'b1;
-            RegWrite = 1'b0;
+        else if(!opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //sw
+            Branch <= 1'b0;
+            MemRead <= 1'b0;
+            MemtoReg <= 1'bz;
+            ALUOp0 <= 1'b0;
+            ALUOp1 <= 1'b0;
+            MemWrite <= 1'b1;
+            ALUSrc <= 1'b1;
+            RegWrite <= 1'b0;
         end
-        if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
-            Branch = 1'b1;
-            MemRead = 1'b0;
-            ALUOp0 = 1'b0;
-            ALUOp1 = 1'b1;
-            MemWrite = 1'b0;
-            ALUSrc = 1'b0;
-            RegWrite = 1'b0;
+        else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
+            Branch <= 1'b1;
+            MemRead <= 1'b0;
+            MemtoReg <= 1'bz;
+            ALUOp0 <= 1'b0;
+            ALUOp1 <= 1'b1;
+            MemWrite <= 1'b0;
+            ALUSrc <= 1'b0;
+            RegWrite <= 1'b0;
         end
-        if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
-            Branch = 1'b0;
-            MemRead = 1'b0;
-            MemtoReg = 1'b0;
-            ALUOp0 = 1'b0;
-            ALUOp1 = 1'b0;
-            MemWrite = 1'b0;
-            ALUSrc = 1'b1;
-            RegWrite = 1'b1;
+        else if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
+            Branch <= 1'b0;
+            MemRead <= 1'b0;
+            MemtoReg <= 1'b0;
+            ALUOp0 <= 1'b0;
+            ALUOp1 <= 1'b0;
+            MemWrite <= 1'b0;
+            ALUSrc <= 1'b1;
+            RegWrite <= 1'b1;
         end
-        if(opcode[6]&&opcode[5]&&!opcode[4]&&opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jal
-            Branch = 1'b1;
-            MemRead = 1'b0;
-            MemtoReg = 1'b0;
-            MemWrite = 1'b0;
-            RegWrite = 1'b1;
+        else if(opcode[6]&&opcode[5]&&!opcode[4]&&opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jal
+            Branch <= 1'b1;
+            MemRead <= 1'b0;
+            MemtoReg <= 1'b0;
+            ALUOp0 <= 1'bz;
+            ALUOp1 <= 1'bz;
+            MemWrite <= 1'b0;
+            ALUSrc <= 1'bz;
+            RegWrite <= 1'b1;
         end
-        if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jalr
-            Branch = 1'b1;
-            MemRead = 1'b0;
-            MemWrite = 1'b0;
-            RegWrite = 1'b0;
+        else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jalr
+            Branch <= 1'b1;
+            MemRead <= 1'b0;
+            MemtoReg <= 1'bz;
+            ALUOp0 <= 1'bz;
+            ALUOp1 <= 1'bz;
+            MemWrite <= 1'b0;
+            ALUSrc <= 1'bz;
+            RegWrite <= 1'b0;
         end
-        if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //addi,slti
+        else begin //addi,slti
             if(funct3[1])begin //slti
-                Branch = 1'b0;
-                MemRead = 1'b0;
-                MemtoReg = 1'b0;
-                ALUOp0 = 1'b0;
-                ALUOp1 = 1'b1;
-                MemWrite = 1'b0;
-                ALUSrc = 1'b1;
-                RegWrite = 1'b1;
+                Branch <= 1'b0;
+                MemRead <= 1'b0;
+                MemtoReg <= 1'b0;
+                ALUOp0 <= 1'b0;
+                ALUOp1 <= 1'b1;
+                MemWrite <= 1'b0;
+                ALUSrc <= 1'b1;
+                RegWrite <= 1'b1;
             end
             else begin //addi
-                Branch = 1'b0;
-                MemRead = 1'b0;
-                MemtoReg = 1'b0;
-                ALUOp0 = 1'b0;
-                ALUOp1 = 1'b0;
-                MemWrite = 1'b0;
-                ALUSrc = 1'b1;
-                RegWrite = 1'b1;
+                Branch <= 1'b0;
+                MemRead <= 1'b0;
+                MemtoReg <= 1'b0;
+                ALUOp0 <= 1'b0;
+                ALUOp1 <= 1'b0;
+                MemWrite <= 1'b0;
+                ALUSrc <= 1'b1;
+                RegWrite <= 1'b1;
             end
         end
     end
