@@ -64,6 +64,7 @@ module CHIP(clk,
 endmodule
 
 module Control_unit(clk,
+                    rst_n,
                     fanin,
                     Branch,
                     MemRead,
