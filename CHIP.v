@@ -212,12 +212,11 @@ module Control_unit(opcode,
 endmodule
 
 module Program_counter(address, address_nxt, immGen, Branch, Zero);
+    input address
     input immGen;
     input Branch;
     input Zero;
-    output fanout;
-    reg address;
-    assign fanout = address;
+    reg address_nxt;
     always @(*) begin
         if (Branch && Zero)
             address_nxt = address + immGen << 1;
