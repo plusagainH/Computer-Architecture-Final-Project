@@ -44,7 +44,8 @@ module CHIP(clk,
         .ALUOp0(),
         .ALUOp1(),
         .ALUSrc(),
-        .RegWrite(regWrite));
+        .RegWrite(regWrite),
+        .ImmGenOp());
 
     Program_counter counter(
         .address(PC),
@@ -90,7 +91,8 @@ module Control_unit(opcode,
                     ALUOp0,
                     ALUOp1,
                     ALUSrc,
-                    RegWrite);
+                    RegWrite,
+                    ImmGenOp);
     input [6:0] opcode;
     input [6:0] funct7;
     input [2:0] funct3;
@@ -101,6 +103,7 @@ module Control_unit(opcode,
     output reg  ALUOp1;
     output reg  ALUSrc;
     output reg  RegWrite;
+    output [2:0] ImmGenOp
     
     always @(opcode or funct7 or funct3)
         if(!opcode[6]&&opcode[5]&&opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //add,sub,mul
@@ -112,6 +115,7 @@ module Control_unit(opcode,
                 ALUOp1 <= 1'b1;
                 ALUSrc <= 1'b0;
                 RegWrite <= 1'b1;
+                ImmGenOp <= 3'bz;
             end
             else begin //add,mul
                 if(funct7[0])begin //mul
@@ -122,6 +126,7 @@ module Control_unit(opcode,
                     ALUOp1 <= 1'b0;
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b1;
+                    ImmGenOp <= 3'bz;
                 end
                 else begin //add
                     Branch <= 1'b0;
@@ -131,6 +136,7 @@ module Control_unit(opcode,
                     ALUOp1 <= 1'b0;
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b1;
+                    ImmGenOp <= 3'bz;
                 end
             end
         end
@@ -142,6 +148,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'b0;
             ALUSrc <= 1'b1;
             RegWrite <= 1'b1;
+            ImmGenOp <= 3'b000;
         end
         else if(!opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //sw
             Branch <= 1'b0;
@@ -151,6 +158,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'b0;
             ALUSrc <= 1'b1;
             RegWrite <= 1'b0;
+            ImmGenOp <= 3'b001;
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
             Branch <= 1'b1;
@@ -160,6 +168,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'b1;
             ALUSrc <= 1'b0;
             RegWrite <= 1'b0;
+            ImmGenOp <= 3'b010;
         end
         else if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
             Branch <= 1'b0;
@@ -169,6 +178,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'b0;
             ALUSrc <= 1'b1;
             RegWrite <= 1'b1;
+            ImmGenOp <= 3'b011;
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jal
             Branch <= 1'b1;
@@ -178,6 +188,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'bz;
             ALUSrc <= 1'bz;
             RegWrite <= 1'b1;
+            ImmGenOp <= 3'b100;
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jalr
             Branch <= 1'b1;
@@ -187,6 +198,7 @@ module Control_unit(opcode,
             ALUOp1 <= 1'bz;
             ALUSrc <= 1'bz;
             RegWrite <= 1'b0;
+            ImmGenOp <= 3'b000;
         end
         else begin //addi,slti
             if(funct3[1])begin //slti
@@ -197,6 +209,7 @@ module Control_unit(opcode,
                 ALUOp1 <= 1'b1;
                 ALUSrc <= 1'b1;
                 RegWrite <= 1'b1;
+                ImmGenOp <= 3'b000;
             end
             else begin //addi
                 Branch <= 1'b0;
@@ -206,6 +219,7 @@ module Control_unit(opcode,
                 ALUOp1 <= 1'b0;
                 ALUSrc <= 1'b1;
                 RegWrite <= 1'b1;
+                ImmGenOp <= 3'b000;
             end
         end
     end
@@ -218,7 +232,7 @@ module Program_counter(address, address_nxt, immGen, Branch, Zero);
     input Zero;
     reg address_nxt;
     always @(*) begin
-        if (Branch && Zero)
+        if (Branch && Zero)begin
             address_nxt = address + immGen << 1;
         end
         else begin
@@ -228,13 +242,81 @@ module Program_counter(address, address_nxt, immGen, Branch, Zero);
 
 endmodule
 
-module Imm_Gen(instruction,ImmGenOp0,ImmGenOp1,ImmGenOp2,ImmGenOut);
+module Imm_Gen(instruction,ImmGenOp,ImmGenOut);
     input [31:0] instruction;
-    input ImmGenOp0;
-    input ImmGenOp1;
-    input ImmGenOp2;
+    input [2:0] ImmGenOp;
     output reg [31:0] ImmGenOut;
-    
+    always @(instruction or ImmGenOp) begin
+        case(ImmGenOp)
+            3'b000 : begin  //I-type
+                if(instruction[31]==1'b0)begin
+                    ImmGenOut[31:12] <= 20'b0000_0000_0000_0000_0000;
+                    ImmGenOut[11:0] <= instruction[31:20];
+                end
+                else begin
+                    ImmGenOut[31:12] <= 20'b1111_1111_1111_1111_1111;
+                    ImmGenOut[11:0] <= instruction[31:20];
+                end
+            end
+            3'b001 : begin  //S-type
+                if(instruction[31]==1'b0)begin
+                    ImmGenOut[31:12] <= 20'b0000_0000_0000_0000_0000;
+                    ImmGenOut[11:5] <= instruction[31:25];
+                    ImmGenOut[4:0] <= instruction[11:7];
+                end
+                else begin
+                    ImmGenOut[31:12] <= 20'b1111_1111_1111_1111_1111;
+                    ImmGenOut[11:5] <= instruction[31:25];
+                    ImmGenOut[4:0] <= instruction[11:7];
+                end
+            end
+            3'b010 : begin  //B-type
+                if(instruction[31]==1'b0)begin
+                    ImmGenOut[31:12] <= 20'b0000_0000_0000_0000_0000;
+                    ImmGenOut[11] <= instruction[31];
+                    ImmGenOut[10] <= instruction[7];
+                    ImmGenOut[9:4] <= instruction[30:25];
+                    ImmGenOut[3:0] <= instruction[11:8];
+                end
+                else begin
+                    ImmGenOut[31:12] <= 20'b1111_1111_1111_1111_1111;
+                    ImmGenOut[11] <= instruction[31];
+                    ImmGenOut[10] <= instruction[7];
+                    ImmGenOut[9:4] <= instruction[30:25];
+                    ImmGenOut[3:0] <= instruction[11:8];
+                end
+            end
+            3'b011 : begin  //U-type
+                if(instruction[31]==1'b0)begin
+                    ImmGenOut[31:20] <= 12'b0000_0000_0000;
+                    ImmGenOut[19:0] <= instruction[31:12];
+                end
+                else begin
+                    ImmGenOut[31:20] <= 12'b1111_1111_1111;
+                    ImmGenOut[19:0] <= instruction[31:12];
+                end
+            end
+            3'b100 : begin  //J-type
+                if(instruction[31]==1'b0)begin
+                    ImmGenOut[31:20] <= 12'b0000_0000_0000;
+                    ImmGenOut[19] <= instruction[31];
+                    ImmGenOut[18:11] <= instruction[19:12];
+                    ImmGenOut[10] <= instruction[20];
+                    ImmGenOut[9:0] <= instruction[30:21];
+                end
+                else begin
+                    ImmGenOut[31:20] <= 12'b1111_1111_1111;
+                    ImmGenOut[19] <= instruction[31];
+                    ImmGenOut[18:11] <= instruction[19:12];
+                    ImmGenOut[10] <= instruction[20];
+                    ImmGenOut[9:0] <= instruction[30:21];
+                end
+            end
+            default: begin
+                ImmGenOut[31:0] <= 32'bz;
+            end
+        endcase
+    end
 endmodule
 
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
