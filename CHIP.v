@@ -228,6 +228,15 @@ module Program_counter(address, address_nxt, immGen, Branch, Zero);
 
 endmodule
 
+module Imm_Gen(instruction,ImmGenOp0,ImmGenOp1,ImmGenOp2,ImmGenOut);
+    input [31:0] instruction;
+    input ImmGenOp0;
+    input ImmGenOp1;
+    input ImmGenOp2;
+    output reg [31:0] ImmGenOut;
+    
+endmodule
+
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
    
     parameter BITS = 32;
