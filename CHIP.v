@@ -34,25 +34,35 @@ module CHIP(clk,
     //---------------------------------------//
 
     // Todo: other wire/reg
-    Control_unit control(
+    wire          immGenWire  ;
+    wire          branchWire  ;
+    wire          zeroWire    ;
+    wire          immGenOpWire;
+
+    Control_unit control0(
         .opcode(mem_rdata_I[6:0]),
         .funct7(mem_rdata_I[31:25]),
         .funct3(mem_rdata_I[14:12]),
-        .Branch(),
+        .Branch(branchWire),
         .MemReadWrite(mem_wen_D),
         .MemtoReg(),
         .ALUOp0(),
         .ALUOp1(),
         .ALUSrc(),
         .RegWrite(regWrite),
-        .ImmGenOp());
+        .ImmGenOp(immGenOpWire));
 
-    Program_counter counter(
+    Imm_gen imm0(
+    	.instruction(mem_rdata_I),
+    	.ImmGenOp(immGenOpWire),
+    	.ImmGenOut(immGenWire));
+
+    Program_counter counter0(
         .address(PC),
         .address_nxt(PC_nxt),
-        .immGen(),
-        .Branch(), 
-        .Zero());
+        .immGen(immGenWire),
+        .Branch(branchWire), 
+        .Zero(zeroWire));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -230,19 +240,19 @@ module Program_counter(address, address_nxt, immGen, Branch, Zero);
     input immGen;
     input Branch;
     input Zero;
-    reg address_nxt;
-    always @(*) begin
+    output reg address_nxt;
+    always @(address or immGen) begin
         if (Branch && Zero)begin
-            address_nxt = address + immGen << 1;
+            address_nxt = address + (immGen << 1);
         end
         else begin
-            addressMnxt = address + 4;
+            address_nxt = address + 4;
         end
     end
 
 endmodule
 
-module Imm_Gen(instruction,ImmGenOp,ImmGenOut);
+module Imm_gen(instruction,ImmGenOp,ImmGenOut);
     input [31:0] instruction;
     input [2:0] ImmGenOp;
     output reg [31:0] ImmGenOut;
