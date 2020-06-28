@@ -50,7 +50,7 @@ module CHIP(clk,
     wire          regWriteWire;
 
     wire   [31:0] immGenWire  ;  //Imm_Gen output
-    wire          zeroWire    ;
+    wire          zeroWire    ;  //ALU zero
     
     reg    [31:0] aluIn1      ;  //ALU Input 1
     reg    [31:0] aluIn2      ;  //ALU Input 2
@@ -76,11 +76,6 @@ module CHIP(clk,
         .JALROp(jalrOpWire),
         .RegWrite(regWrite));
 
-    Imm_gen imm0(
-    	.instruction(mem_rdata_I),
-    	.ImmGenOp(immGenOpWire),
-    	.ImmGenOut(immGenWire));
-
     Program_counter counter0(
     	.address(PC),
     	.immGen(immGenWire),
@@ -90,6 +85,11 @@ module CHIP(clk,
     	.Zero(zeroWire),
     	.JalOp(jalOpWire),
     	.JalrOp(jalrOpWire));
+
+    Imm_gen imm0(
+    	.instruction(mem_rdata_I),
+    	.ImmGenOp(immGenOpWire),
+    	.ImmGenOut(immGenWire));
 
     Middle_stage middle0(
     	.pc(PC),
@@ -101,6 +101,14 @@ module CHIP(clk,
     	.auipc1(auipcOp1Wire),
     	.o1(aluIn1),
     	.o2(aluIn2));
+
+	reg [31:0] PC4 = PC + 4; 
+    MemtoReg_mux memtoReg0(
+    	.i0(mem_rdata_D),
+    	.i1(PC4),
+    	.i2(aluOut),
+    	.memtoReg(memtoRegWire),
+    	.writeData(rd_data));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -448,6 +456,22 @@ module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
 		else begin
 			o2 <= imm << 3;
 		end
+	end
+endmodule
+
+module MemtoReg_mux(i0, i1, i2, memtoReg, writeData);
+	input [31:0] i0;
+	input [31:0] i1;
+	input [31:0] i2;
+	input [1:0] memtoReg;
+	output reg [31:0] writeData;
+	always @(i0 or i1 or i2 or memtoReg) begin
+		case (memtoReg)
+			2'b00 : writeData <= i0;
+			2'b01 : writeData <= i1;
+			2'b10 : writeData <= i2;
+			default : writeData <= 31'bz;
+		endcase
 	end
 endmodule
 
