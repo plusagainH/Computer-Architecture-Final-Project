@@ -34,10 +34,29 @@ module CHIP(clk,
     //---------------------------------------//
 
     // Todo: other wire/reg
-    wire          immGenWire  ;
+
+    //control unit wire
     wire          branchWire  ;
+    wire          memReadWriteWire;
+    wire   [1:0]  memtoRegWire;
+    wire          aluOp0Wire  ;
+    wire          aluOp1Wire  ;
+    wire          jalOpWire   ;
+    wire          aluSrcWire  ;
+    wire          auipcOp0Wire;
+    wire          auipcOp1Wire;
+    wire   [2:0]  immGenOpWire;
+    wire          jalrOpWire  ;
+    wire          regWriteWire;
+
+    wire   [31:0] immGenWire  ;  //Imm_Gen output
     wire          zeroWire    ;
-    wire          immGenOpWire;
+    
+    reg    [31:0] aluIn1      ;  //ALU Input 1
+    reg    [31:0] aluIn2      ;  //ALU Input 2
+
+    assign mem_wdata_D = rs2_data;
+    assign mem_addr_I = PC ;
 
     Control_unit control0(
         .opcode(mem_rdata_I[6:0]),
@@ -45,15 +64,15 @@ module CHIP(clk,
         .funct3(mem_rdata_I[14:12]),
         .Branch(branchWire),
         .MemReadWrite(mem_wen_D),
-        .MemtoReg(),
-        .ALUOp0(),
-        .ALUOp1(),
-        .JALOp(),
-        .ALUSrc(),
-        .AUIPCOp0(),
-        .AUIPCOp1(),
+        .MemtoReg(memtoRegWire),
+        .ALUOp0(aluOp0Wire),
+        .ALUOp1(aluOp1Wire),
+        .JALOp(jalOpWire),
+        .ALUSrc(aluSrcWire),
+        .AUIPCOp0(auipcOp0Wire),
+        .AUIPCOp1(auipcOp1Wire),
         .ImmGenOp(immGenOpWire),
-        .JALROp(),
+        .JALROp(jalrOpWire),
         .RegWrite(regWrite));
 
     Imm_gen imm0(
@@ -67,6 +86,17 @@ module CHIP(clk,
         .immGen(immGenWire),
         .Branch(branchWire), 
         .Zero(zeroWire));
+
+    Middle_stage middle0(
+    	.pc(PC),
+    	.rd1(rs1_data),
+    	.rd2(rs2_data),
+    	.imm(immGenWire),
+    	.asrc(aluSrcWire),
+    	.auipc0(auipcOp0Wire),
+    	.auipc1(auipcOp1Wire),
+    	.o1(aluIn1),
+    	.o2(aluIn2));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -383,6 +413,31 @@ module Imm_gen(instruction,ImmGenOp,ImmGenOut);
             end
         endcase
     end
+endmodule
+
+module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
+	input [31:0] pc, rd1, rd2, imm;
+	input asrc,auipc0, auipc1;
+	output reg [31:0] o1, o2;
+	always @(pc or rd1 or rd2 or imm) begin
+		if (auipc0==1'b1) begin
+			o1 <= pc;
+		end
+		else begin
+			o1 <= rd1;
+		end
+		if (auipc1==1'b0) begin
+			if (asrc==1'b0) begin
+				o2 <= rd2;
+			end
+			else begin
+				o2 <= imm;
+			end
+		end
+		else begin
+			o2 <= imm << 3;
+		end
+	end
 endmodule
 
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
