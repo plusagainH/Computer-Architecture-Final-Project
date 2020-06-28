@@ -54,6 +54,7 @@ module CHIP(clk,
     
     reg    [31:0] aluIn1      ;  //ALU Input 1
     reg    [31:0] aluIn2      ;  //ALU Input 2
+    reg    [31:0] aluOut      ;  //ALU OUTPUT
 
     assign mem_wdata_D = rs2_data;
     assign mem_addr_I = PC ;
@@ -81,11 +82,14 @@ module CHIP(clk,
     	.ImmGenOut(immGenWire));
 
     Program_counter counter0(
-        .address(PC),
-        .address_nxt(PC_nxt),
-        .immGen(immGenWire),
-        .Branch(branchWire), 
-        .Zero(zeroWire));
+    	.address(PC),
+    	.immGen(immGenWire),
+    	.aluResult(aluOut),
+    	.address_nxt(PC_nxt),
+    	.Branch(branchWire),
+    	.Zero(zeroWire),
+    	.JalOp(jalOpWire),
+    	.JalrOp(jalrOpWire));
 
     Middle_stage middle0(
     	.pc(PC),
@@ -321,21 +325,28 @@ module Control_unit(opcode,
     end
 endmodule
 
-module Program_counter(address, address_nxt, immGen, Branch, Zero);
-    input address
-    input immGen;
+module Program_counter(address, immGen, aluResult, address_nxt, Branch, Zero, JalOp, JalrOp);
+    input [31:0] address
+    input [31:0] immGen;
+    input [31:0] aluResult;
     input Branch;
     input Zero;
-    output reg address_nxt;
-    always @(address or immGen) begin
-        if (Branch && Zero)begin
-            address_nxt = address + (immGen << 1);
-        end
-        else begin
-            address_nxt = address + 4;
-        end
+    input JalOp;
+    input JalrOp;
+    output reg [31:0] address_nxt;
+    always @(address or immGen or aluResult) begin
+    	if (!JalrOp) begin
+    		if ((Branch && Zero) || JalOp)begin
+	            address_nxt = address + (immGen << 1);
+	        end
+	        else begin
+	            address_nxt = address + 4;
+	        end
+    	end
+    	else begin
+    		address_nxt = aluResult;
+    	end
     end
-
 endmodule
 
 module Imm_gen(instruction,ImmGenOp,ImmGenOut);
