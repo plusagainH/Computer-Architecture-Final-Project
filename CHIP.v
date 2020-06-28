@@ -54,6 +54,11 @@ module CHIP(clk,
         .Branch(), 
         .Zero());
 
+    Imm_Gen immGen(
+        instruction(),
+        ImmGenOp(),
+        ImmGenOut());
+
     //---------------------------------------//
     // Do not modify this part!!!            //
     reg_file reg0(                           //
