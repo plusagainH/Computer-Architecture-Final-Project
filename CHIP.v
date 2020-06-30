@@ -52,12 +52,13 @@ module CHIP(clk,
     wire   [31:0] immGenWire  ;  //Imm_Gen output
     wire          zeroWire    ;  //ALU zero
     
-    reg    [31:0] aluIn1      ;  //ALU Input 1
-    reg    [31:0] aluIn2      ;  //ALU Input 2
-    reg    [31:0] aluOut      ;  //ALU OUTPUT
+    wire   [31:0] aluIn1      ;  //ALU Input 1
+    wire   [31:0] aluIn2      ;  //ALU Input 2
+    wire   [31:0] aluOut      ;  //ALU OUTPUT
 
     assign mem_wdata_D = rs2_data;
     assign mem_addr_I = PC ;
+    assign mem_addr_D = aluOut;
 
     Control_unit control0(
         .opcode(mem_rdata_I[6:0]),
