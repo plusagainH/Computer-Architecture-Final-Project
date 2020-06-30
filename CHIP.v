@@ -110,11 +110,6 @@ module CHIP(clk,
     	.memtoReg(memtoRegWire),
     	.writeData(rd_data));
 
-    Imm_Gen immGen(
-        instruction(),
-        ImmGenOp(),
-        ImmGenOut());
-
     //---------------------------------------//
     // Do not modify this part!!!            //
     reg_file reg0(                           //
@@ -526,5 +521,164 @@ endmodule
 
 module multDiv(clk, rst_n, valid, ready, mode, in_A, in_B, out);
     // Todo: your HW3
+    // Definition of ports
+    input         clk, rst_n;
+    input         valid, mode; // mode: 0: multu, 1: divu
+    output        ready;
+    input  [31:0] in_A, in_B;
+    output [63:0] out;
 
+    // Definition of states
+    parameter IDLE = 3'b000;
+    parameter MULT = 3'b001;
+    parameter ADD  = 3'b010;
+    parameter SUB  = 3'b011;
+    parameter OUT  = 3'b100;
+
+    // Wire and reg
+    reg  [ 2:0] state, state_nxt;
+    reg  [ 4:0] counter, counter_nxt;
+    reg  [63:0] shreg, shreg_nxt;
+    reg  [31:0] alu_in, alu_in_nxt;
+    reg  [32:0] alu_out;
+
+    // wire assignments
+    assign ready = (counter == 31);
+    assign out = (counter==31) ? shreg : 0; 
+    
+    
+    // Combinational always block
+    // State machine
+    always @(*) begin
+        case(state)
+            IDLE: begin
+                if (valid) begin
+                    if (mode)
+                        state_nxt = DIV;
+                    else
+                        state_nxt = MULT;
+                end
+                else
+                    state_nxt = IDLE;
+                counter_nxt = 5'b0;
+            end
+
+            MULT: begin
+                if (counter == 5'b11111)
+                    state_nxt = OUT;
+                else
+                    state_nxt = MULT;
+            end
+
+            ADD : begin
+                if (counter == 5'b11111)
+                    state_nxt = OUT;
+                else
+                    state_nxt = ADD;
+            end
+
+            SUB : begin
+                if (counter == 5'b11111)
+                    state_nxt = OUT;
+                else
+                    state_nxt = SUB;
+            end
+
+            OUT : begin
+                if (valid) begin
+                    if (mode)
+                        state_nxt = DIV;
+                    else
+                        state_nxt = MULT;
+                end
+                else
+                    state_nxt = IDLE;
+                counter_nxt = 5'b0;
+            end
+        endcase
+    end
+    // Counter
+    always @(posedge clk) begin
+        if ((state == MULT) | (state == DIV)) begin
+            if (counter == 5'b11111)
+                counter_nxt = 0;
+            else
+                counter_nxt = counter_nxt + 1;
+        end
+    end
+    // ALU input
+    always @(*) begin
+        case(state)
+            IDLE: begin
+                if (valid) alu_in_nxt = in_B;
+                else       alu_in_nxt = 0;
+            end
+            OUT : begin
+                if (valid) alu_in_nxt = in_B;
+                else       alu_in_nxt = 0;
+            end
+            default: alu_in_nxt = alu_in;
+        endcase
+    end
+
+    // ALU output
+    always @(*) begin
+        case (state)
+            IDLE: begin
+                if (valid)
+                    shreg_nxt = in_A;  // load the multiplier/ Dividend to the 64-bit register
+            end
+            MULT: begin
+                if (shreg[0])
+                    alu_out = shreg[63:32] + alu_in;
+            end
+            ADD: begin
+                ///
+            end
+            SUB: begin
+                ///
+            end
+            OUT: begin
+                if (valid)
+                    shreg_nxt = in_A;
+            end
+            default: shreg_nxt = shreg;
+        endcase
+    end
+
+    // Shift register
+    always @(*) begin
+        case (state)
+            MULT: begin
+                if (shreg[0])
+                    shreg_nxt = {alu_out, shreg[31:1]};
+                else
+                    shreg_nxt = {1'b0, shreg[63:1]};
+            end
+            ADD: begin
+                ///
+            end
+            SUB: begin
+                ///
+            end
+        endcase
+    end
+
+
+    // Todo: Sequential always block
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= IDLE;
+            counter <= 0;
+            shreg <= 0;
+            alu_in <= 0;
+        end
+        
+        else begin
+            state <= state_nxt;
+            shreg <= shreg_nxt;
+            counter <= counter_nxt;
+            alu_in <= alu_in_nxt;
+        end
+    end
 endmodule
