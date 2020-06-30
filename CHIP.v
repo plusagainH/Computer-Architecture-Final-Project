@@ -34,10 +34,30 @@ module CHIP(clk,
     //---------------------------------------//
 
     // Todo: other wire/reg
-    wire          immGenWire  ;
+
+    //control unit wire
     wire          branchWire  ;
-    wire          zeroWire    ;
-    wire          immGenOpWire;
+    wire          memReadWriteWire;
+    wire   [1:0]  memtoRegWire;
+    wire          aluOp0Wire  ;
+    wire          aluOp1Wire  ;
+    wire          jalOpWire   ;
+    wire          aluSrcWire  ;
+    wire          auipcOp0Wire;
+    wire          auipcOp1Wire;
+    wire   [2:0]  immGenOpWire;
+    wire          jalrOpWire  ;
+    wire          regWriteWire;
+
+    wire   [31:0] immGenWire  ;  //Imm_Gen output
+    wire          zeroWire    ;  //ALU zero
+    
+    reg    [31:0] aluIn1      ;  //ALU Input 1
+    reg    [31:0] aluIn2      ;  //ALU Input 2
+    reg    [31:0] aluOut      ;  //ALU OUTPUT
+
+    assign mem_wdata_D = rs2_data;
+    assign mem_addr_I = PC ;
 
     Control_unit control0(
         .opcode(mem_rdata_I[6:0]),
@@ -45,28 +65,50 @@ module CHIP(clk,
         .funct3(mem_rdata_I[14:12]),
         .Branch(branchWire),
         .MemReadWrite(mem_wen_D),
-        .MemtoReg(),
-        .ALUOp0(),
-        .ALUOp1(),
-        .JALOp(),
-        .ALUSrc(),
-        .AUIPCOp0(),
-        .AUIPCOp1(),
+        .MemtoReg(memtoRegWire),
+        .ALUOp0(aluOp0Wire),
+        .ALUOp1(aluOp1Wire),
+        .JALOp(jalOpWire),
+        .ALUSrc(aluSrcWire),
+        .AUIPCOp0(auipcOp0Wire),
+        .AUIPCOp1(auipcOp1Wire),
         .ImmGenOp(immGenOpWire),
-        .JALROp(),
+        .JALROp(jalrOpWire),
         .RegWrite(regWrite));
+
+    Program_counter counter0(
+    	.address(PC),
+    	.immGen(immGenWire),
+    	.aluResult(aluOut),
+    	.address_nxt(PC_nxt),
+    	.Branch(branchWire),
+    	.Zero(zeroWire),
+    	.JalOp(jalOpWire),
+    	.JalrOp(jalrOpWire));
 
     Imm_gen imm0(
     	.instruction(mem_rdata_I),
     	.ImmGenOp(immGenOpWire),
     	.ImmGenOut(immGenWire));
 
-    Program_counter counter0(
-        .address(PC),
-        .address_nxt(PC_nxt),
-        .immGen(immGenWire),
-        .Branch(branchWire), 
-        .Zero(zeroWire));
+    Middle_stage middle0(
+    	.pc(PC),
+    	.rd1(rs1_data),
+    	.rd2(rs2_data),
+    	.imm(immGenWire),
+    	.asrc(aluSrcWire),
+    	.auipc0(auipcOp0Wire),
+    	.auipc1(auipcOp1Wire),
+    	.o1(aluIn1),
+    	.o2(aluIn2));
+
+	reg [31:0] PC4 = PC + 4; 
+    MemtoReg_mux memtoReg0(
+    	.i0(mem_rdata_D),
+    	.i1(PC4),
+    	.i2(aluOut),
+    	.memtoReg(memtoRegWire),
+    	.writeData(rd_data));
 
     Imm_Gen immGen(
         instruction(),
@@ -296,21 +338,28 @@ module Control_unit(opcode,
     end
 endmodule
 
-module Program_counter(address, address_nxt, immGen, Branch, Zero);
-    input address
-    input immGen;
+module Program_counter(address, immGen, aluResult, address_nxt, Branch, Zero, JalOp, JalrOp);
+    input [31:0] address
+    input [31:0] immGen;
+    input [31:0] aluResult;
     input Branch;
     input Zero;
-    output reg address_nxt;
-    always @(address or immGen) begin
-        if (Branch && Zero)begin
-            address_nxt = address + (immGen << 1);
-        end
-        else begin
-            address_nxt = address + 4;
-        end
+    input JalOp;
+    input JalrOp;
+    output reg [31:0] address_nxt;
+    always @(address or immGen or aluResult) begin
+    	if (!JalrOp) begin
+    		if ((Branch && Zero) || JalOp)begin
+	            address_nxt = address + (immGen << 1);
+	        end
+	        else begin
+	            address_nxt = address + 4;
+	        end
+    	end
+    	else begin
+    		address_nxt = aluResult;
+    	end
     end
-
 endmodule
 
 module Imm_gen(instruction,ImmGenOp,ImmGenOut);
@@ -388,6 +437,47 @@ module Imm_gen(instruction,ImmGenOp,ImmGenOut);
             end
         endcase
     end
+endmodule
+
+module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
+	input [31:0] pc, rd1, rd2, imm;
+	input asrc,auipc0, auipc1;
+	output reg [31:0] o1, o2;
+	always @(pc or rd1 or rd2 or imm) begin
+		if (auipc0==1'b1) begin
+			o1 <= pc;
+		end
+		else begin
+			o1 <= rd1;
+		end
+		if (auipc1==1'b0) begin
+			if (asrc==1'b0) begin
+				o2 <= rd2;
+			end
+			else begin
+				o2 <= imm;
+			end
+		end
+		else begin
+			o2 <= imm << 3;
+		end
+	end
+endmodule
+
+module MemtoReg_mux(i0, i1, i2, memtoReg, writeData);
+	input [31:0] i0;
+	input [31:0] i1;
+	input [31:0] i2;
+	input [1:0] memtoReg;
+	output reg [31:0] writeData;
+	always @(i0 or i1 or i2 or memtoReg) begin
+		case (memtoReg)
+			2'b00 : writeData <= i0;
+			2'b01 : writeData <= i1;
+			2'b10 : writeData <= i2;
+			default : writeData <= 31'bz;
+		endcase
+	end
 endmodule
 
 module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
