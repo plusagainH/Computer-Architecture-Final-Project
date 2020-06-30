@@ -517,192 +517,49 @@ module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
         end       
     end
 endmodule
-module Basic_ALU(clk, rst_n, valid, ready, mode, in_A, in_B, out)
-    input         clk, rst_n;
-    input         valid, mode; // mode: 0: multu, 1: divu
-    output        ready;
-    input  [31:0] in_A, in_B;
-    output [63:0] out;
-    
-endmodule
-module multDiv(clk, rst_n, valid, ready, mode, in_A, in_B, out);
+
+module ALU(ready, mode, in_A, in_B, out);
     // Todo: your HW3
     // Definition of ports
-    input         clk, rst_n;
-    input         valid, mode; // mode: 0: multu, 1: divu
+    input  [1:0]  mode;
     output        ready;
     input  [31:0] in_A, in_B;
     output [63:0] out;
 
-    // Definition of states
-    //parameter IDLE = 2'b00;
-    //parameter MULT = 2'b01;
-    //parameter DIV  = 2'b10;
-    //parameter OUT  = 2'b11;
-
-    // Todo: Wire and reg
-    //reg  [ 1:0] state, state_nxt;
-    //reg  [ 4:0] counter, counter_nxt;
     reg  [63:0] shreg;
-    //reg  [63:0] shreg_nxt;
-    reg  [31:0] alu_in;
-    //reg  [31:0] alu_in_nxt;
     reg  [32:0] alu_out;
     reg finished = 0;
 
-    // Todo 5: wire assignments
+    parameter ADD = 2'b00;
+    parameter SUB = 2'b01;
+    parameter COMPARE = 2'b10;
+    parameter MULT = 2'b11;
+
     assign ready = (finished);
     assign out = (finished) ? shreg : 0; 
 
-    always @(*) begin
-        if (valid) begin
-            alu_in = in_B;
-            shreg = in_A;
-            for (i=0; i<32; i=i+1) begin
-                if (shreg[0])
-                    alu_out = shreg[63:32] + alu_in;
-                    shreg = {alu_out, shreg[31:1]};
-                else
-                    shreg = {1'b0, shreg[63:1]};
+    always @(in_A or in_B) begin
+        case(mode)
+            ADD:begin
+                shreg =  in_A + in_B;
             end
-            finished = 1;
-        end
-    end
-    
-    // Combinational always block
-    // Todo 1: State machine
-    /*
-    always @(*) begin
-        case(state)
-            IDLE: begin
-                if (valid) begin
-                    if (mode)
-                        state_nxt = DIV;
+            SUB:begin
+                shreg =  in_A - in_B;
+            end
+            COMPARE:begin
+                shreg[0] =  (in_A<in_B) ? 1 : 0;
+            end
+            MULT:begin
+                shreg = in_A;
+                for (i=0; i<32; i=i+1) begin
+                    if (shreg[0])
+                        alu_out = shreg[63:32] + in_B;
+                        shreg = {alu_out, shreg[31:1]};
                     else
-                        state_nxt = MULT;
+                        shreg = {1'b0, shreg[63:1]};
                 end
-                else
-                    state_nxt = IDLE;
-                counter_nxt = 5'b0;
-            end
-
-            MULT: begin
-                if (counter == 5'b11111)
-                    state_nxt = OUT;
-                else
-                    state_nxt = MULT;
-            end
-
-            DIV : begin
-                if (counter == 5'b11111)
-                    state_nxt = OUT;
-                else
-                    state_nxt = DIV;
-            end
-
-            OUT : begin
-                if (valid) begin
-                    if (mode)
-                        state_nxt = DIV;
-                    else
-                        state_nxt = MULT;
-                end
-                else
-                    state_nxt = IDLE;
-                counter_nxt = 5'b0;
             end
         endcase
+        finished = 1;
     end
-    */
-    // Todo 2: Counter
-    /*
-    always @(posedge clk) begin
-        if ((state == MULT) | (state == DIV)) begin
-            if (counter == 5'b11111)
-                counter_nxt = 0;
-            else
-                counter_nxt = counter_nxt + 1;
-        end
-    end
-    */
-    // ALU input
-    /*
-    always @(*) begin
-        case(state)
-            IDLE: begin
-                if (valid) alu_in_nxt = in_B;
-                else       alu_in_nxt = 0;
-            end
-            OUT : begin
-                if (valid) alu_in_nxt = in_B;
-                else       alu_in_nxt = 0;
-            end
-            default: alu_in_nxt = alu_in;
-        endcase
-    end
-    */
-
-    // Todo 3: ALU output
-    /*
-    always @(*) begin
-        case (state)
-            IDLE: begin
-                if (valid)
-                    shreg_nxt = in_A;  // load the multiplier/ Dividend to the 64-bit register
-            end
-            MULT: begin
-                if (shreg[0])
-                    alu_out = shreg[63:32] + alu_in;
-            end
-            DIV: begin
-                alu_out = shreg[63:31] - alu_in; // the control logic of shreg will be in ToDo4 
-            end
-            OUT: begin
-                if (valid)
-                    shreg_nxt = in_A;
-            end
-            default: shreg_nxt = shreg;
-        endcase
-    end
-    */
-
-    // Todo 4: Shift register
-    /*
-    always @(*) begin
-        case (state)
-            MULT: begin
-                if (shreg[0])
-                    shreg_nxt = {alu_out, shreg[31:1]};
-                else
-                    shreg_nxt = {1'b0, shreg[63:1]};
-            end
-            DIV: begin
-                if (alu_out[32])
-                    shreg_nxt = {shreg[62:0], 1'b0};
-                else
-                    shreg_nxt = {alu_out[31:0], shreg[30:0], 1'b1};
-            end
-        endcase
-    end
-    */
-
-
-    // Todo: Sequential always block
-    /*
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            state <= IDLE;
-            counter <= 0;
-            shreg <= 0;
-            alu_in <= 0;
-        end
-        
-        else begin
-            state <= state_nxt;
-            shreg <= shreg_nxt;
-            counter <= counter_nxt;
-            alu_in <= alu_in_nxt;
-        end
-    end
-    */
 endmodule
