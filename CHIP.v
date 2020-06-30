@@ -81,14 +81,14 @@ module CHIP(clk,
     	.immGen(immGenWire),
     	.aluResult(aluOut),
     	.address_nxt(PC_nxt),
-    	.Branch(branchWire),
-    	.Zero(zeroWire),
-    	.JalOp(jalOpWire),
-    	.JalrOp(jalrOpWire));
+    	.BranchPC(branchWire),
+    	.ZeroPC(zeroWire),
+    	.JALOpPC(jalOpWire),
+    	.JALROpPC(jalrOpWire));
 
     Imm_gen imm0(
     	.instruction(mem_rdata_I),
-    	.ImmGenOp(immGenOpWire),
+    	.ImmGenOpIG(immGenOpWire),
     	.ImmGenOut(immGenWire));
 
     Middle_stage middle0(
@@ -102,10 +102,9 @@ module CHIP(clk,
     	.o1(aluIn1),
     	.o2(aluIn2));
 
-	reg [31:0] PC4 = PC + 4; 
     MemtoReg_mux memtoReg0(
     	.i0(mem_rdata_D),
-    	.i1(PC4),
+    	.i1(PC),
     	.i2(aluOut),
     	.memtoReg(memtoRegWire),
     	.writeData(rd_data));
@@ -165,11 +164,11 @@ module Control_unit(opcode,
     output reg  ALUSrc;
     output reg  AUIPCOp0;
     output reg  AUIPCOp1;
-    output [2:0] ImmGenOp;
+    output reg [2:0] ImmGenOp;
     output reg  JALROp;
     output reg  RegWrite;
     
-    always @(opcode or funct7 or funct3)
+    always @(opcode or funct7 or funct3) begin
         if(!opcode[6]&&opcode[5]&&opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //add,sub,mul
             if(funct7[2])begin //sub
                 Branch <= 1'b0;
@@ -333,18 +332,18 @@ module Control_unit(opcode,
     end
 endmodule
 
-module Program_counter(address, immGen, aluResult, address_nxt, Branch, Zero, JalOp, JalrOp);
-    input [31:0] address
+module Program_counter(address, immGen, aluResult, address_nxt, BranchPC, ZeroPC, JALOpPC, JALROpPC);
+    input [31:0] address;
     input [31:0] immGen;
     input [31:0] aluResult;
-    input Branch;
-    input Zero;
-    input JalOp;
-    input JalrOp;
+    input BranchPC;
+    input ZeroPC;
+    input JALOpPC;
+    input JALROpPC;
     output reg [31:0] address_nxt;
     always @(address or immGen or aluResult) begin
-    	if (!JalrOp) begin
-    		if ((Branch && Zero) || JalOp)begin
+    	if (!JALROpPC) begin
+    		if ((BranchPC && ZeroPC) || JALOpPC)begin
 	            address_nxt = address + (immGen << 1);
 	        end
 	        else begin
@@ -357,12 +356,12 @@ module Program_counter(address, immGen, aluResult, address_nxt, Branch, Zero, Ja
     end
 endmodule
 
-module Imm_gen(instruction,ImmGenOp,ImmGenOut);
+module Imm_gen(instruction,ImmGenOpIG,ImmGenOut);
     input [31:0] instruction;
-    input [2:0] ImmGenOp;
+    input [2:0] ImmGenOpIG;
     output reg [31:0] ImmGenOut;
-    always @(instruction or ImmGenOp) begin
-        case(ImmGenOp)
+    always @(instruction or ImmGenOpIG) begin
+        case(ImmGenOpIG)
             3'b000 : begin  //I-type
                 if(instruction[31]==1'b0)begin
                     ImmGenOut[31:12] <= 20'b0000_0000_0000_0000_0000;
@@ -468,7 +467,7 @@ module MemtoReg_mux(i0, i1, i2, memtoReg, writeData);
 	always @(i0 or i1 or i2 or memtoReg) begin
 		case (memtoReg)
 			2'b00 : writeData <= i0;
-			2'b01 : writeData <= i1;
+			2'b01 : writeData <= i1 + 4;
 			2'b10 : writeData <= i2;
 			default : writeData <= 31'bz;
 		endcase
@@ -521,7 +520,7 @@ endmodule
 
 module multDiv(clk, rst_n, valid, ready, mode, in_A, in_B, out);
     // Todo: your HW3
-// Definition of ports
+    // Definition of ports
     input         clk, rst_n;
     input         valid, mode; // mode: 0: multu, 1: divu
     output        ready;
