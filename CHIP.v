@@ -109,6 +109,12 @@ module CHIP(clk,
     	.memtoReg(memtoRegWire),
     	.writeData(rd_data));
 
+    ALU alu(
+        .mode({aluOp1Wire,aluOp0Wire}), 
+        .in_A(aluIn1), 
+        .in_B(aluIn2), 
+        .out(aluOut));
+
     //---------------------------------------//
     // Do not modify this part!!!            //
     reg_file reg0(                           //
@@ -518,25 +524,22 @@ module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
     end
 endmodule
 
-module ALU(ready, mode, in_A, in_B, out);
+module ALU(mode, in_A, in_B, out);
     // Todo: your HW3
     // Definition of ports
     input  [1:0]  mode;
-    output        ready;
     input  [31:0] in_A, in_B;
     output [63:0] out;
 
     reg  [63:0] shreg;
     reg  [32:0] alu_out;
-    reg finished = 0;
 
     parameter ADD = 2'b00;
     parameter SUB = 2'b01;
     parameter COMPARE = 2'b10;
     parameter MULT = 2'b11;
 
-    assign ready = (finished);
-    assign out = (finished) ? shreg : 0; 
+    assign out = shreg[31:0]; 
 
     always @(in_A or in_B) begin
         case(mode)
@@ -560,6 +563,5 @@ module ALU(ready, mode, in_A, in_B, out);
                 end
             end
         endcase
-        finished = 1;
     end
 endmodule
