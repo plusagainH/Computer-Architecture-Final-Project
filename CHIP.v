@@ -518,7 +518,14 @@ module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
         end       
     end
 endmodule
-
+module Basic_ALU(clk, rst_n, valid, ready, mode, in_A, in_B, out)
+    input         clk, rst_n;
+    input         valid, mode; // mode: 0: multu, 1: divu
+    output        ready;
+    input  [31:0] in_A, in_B;
+    output [63:0] out;
+    
+endmodule
 module multDiv(clk, rst_n, valid, ready, mode, in_A, in_B, out);
     // Todo: your HW3
 // Definition of ports
