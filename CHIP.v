@@ -539,6 +539,8 @@ module ALU(mode, in_A, in_B, out);
     parameter COMPARE = 2'b10;
     parameter MULT = 2'b11;
 
+    integer i;
+
     assign out = shreg[31:0]; 
 
     always @(in_A or in_B) begin
