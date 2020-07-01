@@ -59,6 +59,9 @@ module CHIP(clk,
     assign mem_wdata_D = rs2_data;
     assign mem_addr_I = PC ;
     assign mem_addr_D = aluOut;
+    assign rs1 = mem_rdata_I[19:15];
+    assign rs2 = mem_rdata_I[24:20];
+    assign rd = mem_rdata_I[11:7];
 
     Control_unit control0(
         .opcode(mem_rdata_I[6:0]),
@@ -139,7 +142,6 @@ module CHIP(clk,
         end
         else begin
             PC <= PC_nxt;
-            
         end
     end
 endmodule
