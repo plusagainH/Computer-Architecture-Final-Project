@@ -142,6 +142,7 @@ module CHIP(clk,
         end
         else begin
             PC <= PC_nxt;
+            $display(PC);
         end
     end
 endmodule
@@ -448,21 +449,21 @@ module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
 	output reg [31:0] o1, o2;
 	always @(pc or rd1 or rd2 or imm) begin
 		if (auipc0==1'b1) begin
-			o1 <= pc;
+			o1 = pc;
 		end
 		else begin
-			o1 <= rd1;
+			o1 = rd1;
 		end
 		if (auipc1==1'b0) begin
 			if (asrc==1'b0) begin
-				o2 <= rd2;
+				o2 = rd2;
 			end
 			else begin
-				o2 <= imm;
+				o2 = imm;
 			end
 		end
 		else begin
-			o2 <= imm << 3;
+			o2 = imm << 12;
 		end
 	end
 endmodule
@@ -538,9 +539,9 @@ module ALU(mode, in_A, in_B, out);
     reg  [32:0] alu_out;
 
     parameter ADD = 2'b00;
-    parameter SUB = 2'b01;
-    parameter COMPARE = 2'b10;
-    parameter MULT = 2'b11;
+    parameter MULT = 2'b01;
+    parameter SUB = 2'b10;
+    parameter COMPARE = 2'b11;
 
     integer i;
 
