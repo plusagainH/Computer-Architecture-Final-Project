@@ -134,7 +134,6 @@ module CHIP(clk,
     //---------------------------------------//
     
     // Todo: any combinational/sequential circuit
-
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             PC <= 32'h00010000; // Do not modify this value!!!
@@ -142,7 +141,11 @@ module CHIP(clk,
         end
         else begin
             PC <= PC_nxt;
+<<<<<<< HEAD
             $display(PC);
+=======
+            //$display(aluIn1);
+>>>>>>> a584227da1d11d89a7be347331205d54e5684b03
         end
     end
 endmodule
@@ -450,6 +453,7 @@ module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
 	always @(pc or rd1 or rd2 or imm) begin
 		if (auipc0==1'b1) begin
 			o1 = pc;
+			//$display(o1);
 		end
 		else begin
 			o1 = rd1;
