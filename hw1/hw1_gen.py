@@ -9,7 +9,7 @@ def hw1(n):
 
 if __name__ == '__main__':
     # Modify your test pattern here
-    n = 10
+    n = 20
         
     with open('hw1_data.txt', 'w') as f_data:
         f_data.write('{:0>8x}\n'.format(n))
