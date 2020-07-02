@@ -39,8 +39,7 @@ module CHIP(clk,
     wire          branchWire  ;
     wire          memReadWriteWire;
     wire   [1:0]  memtoRegWire;
-    wire          aluOp0Wire  ;
-    wire          aluOp1Wire  ;
+    wire   [2:0]  aluOpWire   ;
     wire          jalOpWire   ;
     wire          aluSrcWire  ;
     wire          auipcOp0Wire;
@@ -70,8 +69,7 @@ module CHIP(clk,
         .Branch(branchWire),
         .MemReadWrite(mem_wen_D),
         .MemtoReg(memtoRegWire),
-        .ALUOp0(aluOp0Wire),
-        .ALUOp1(aluOp1Wire),
+        .ALUOp(aluOpWire),
         .JALOp(jalOpWire),
         .ALUSrc(aluSrcWire),
         .AUIPCOp0(auipcOp0Wire),
@@ -114,7 +112,7 @@ module CHIP(clk,
     	.writeData(rd_data));
 
     ALU alu(
-        .mode({aluOp1Wire,aluOp0Wire}), 
+        .mode(aluOpWire), 
         .in_A(aluIn1), 
         .in_B(aluIn2), 
         .out(aluOut),
@@ -152,8 +150,7 @@ module Control_unit(opcode,
                     Branch,
                     MemReadWrite,
                     MemtoReg,
-                    ALUOp0,
-                    ALUOp1,
+                    ALUOp,
                     JALOp,
                     ALUSrc,
                     AUIPCOp0,
@@ -167,8 +164,7 @@ module Control_unit(opcode,
     output reg  Branch;
     output reg  MemReadWrite;
     output reg [1:0] MemtoReg;
-    output reg  ALUOp0;
-    output reg  ALUOp1;
+    output reg [2:0] ALUOp;
     output reg  JALOp;
     output reg  ALUSrc;
     output reg  AUIPCOp0;
@@ -183,8 +179,7 @@ module Control_unit(opcode,
                 Branch <= 1'b0;
                 MemReadWrite <= 1'b0;
                 MemtoReg <= 2'b10;
-                ALUOp0 <= 1'b0;
-                ALUOp1 <= 1'b1;
+                ALUOp <= 3'b001;
                 JALOp <= 1'b0;
                 ALUSrc <= 1'b0;
                 AUIPCOp0 <= 1'b0;
@@ -198,8 +193,7 @@ module Control_unit(opcode,
                     Branch <= 1'b0;
 	                MemReadWrite <= 1'b0;
 	                MemtoReg <= 2'b10;
-	                ALUOp0 <= 1'b1;
-	                ALUOp1 <= 1'b0;
+                    ALUOp <= 3'b010;
 	                JALOp <= 1'b0;
 	                ALUSrc <= 1'b0;
 	                AUIPCOp0 <= 1'b0;
@@ -212,8 +206,7 @@ module Control_unit(opcode,
                     Branch <= 1'b0;
 	                MemReadWrite <= 1'b0;
 	                MemtoReg <= 2'b10;
-	                ALUOp0 <= 1'b0;
-	                ALUOp1 <= 1'b0;
+	                ALUOp <= 3'b000;
 	                JALOp <= 1'b0;
 	                ALUSrc <= 1'b0;
 	                AUIPCOp0 <= 1'b0;
@@ -228,8 +221,7 @@ module Control_unit(opcode,
             Branch <= 1'b0;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'b00;
-            ALUOp0 <= 1'b0;
-            ALUOp1 <= 1'b0;
+            ALUOp <= 3'b000;
             JALOp <= 1'b0;
             ALUSrc <= 1'b1;
             AUIPCOp0 <= 1'b0;
@@ -242,8 +234,7 @@ module Control_unit(opcode,
             Branch <= 1'b0;
             MemReadWrite <= 1'b1;
             MemtoReg <= 2'bz;
-            ALUOp0 <= 1'b0;
-            ALUOp1 <= 1'b0;
+            ALUOp <= 3'b000;
             JALOp <= 1'b0;
             ALUSrc <= 1'b1;
             AUIPCOp0 <= 1'b0;
@@ -256,8 +247,7 @@ module Control_unit(opcode,
             Branch <= 1'b1;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'bz;
-            ALUOp0 <= 1'b0;
-            ALUOp1 <= 1'b1;
+            ALUOp <= 3'b001;
             JALOp <= 1'b0;
             ALUSrc <= 1'b0;
             AUIPCOp0 <= 1'b0;
@@ -270,8 +260,7 @@ module Control_unit(opcode,
             Branch <= 1'b0;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'b10;
-            ALUOp0 <= 1'b0;
-            ALUOp1 <= 1'b0;
+            ALUOp <= 3'b000;
             JALOp <= 1'b0;
             ALUSrc <= 1'b1;
             AUIPCOp0 <= 1'b1;
@@ -284,8 +273,7 @@ module Control_unit(opcode,
             Branch <= 1'b0;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'b01;
-            ALUOp0 <= 1'bz;
-            ALUOp1 <= 1'bz;
+            ALUOp <= 3'bz;
             JALOp <= 1'b1;
             ALUSrc <= 1'bz;
             AUIPCOp0 <= 1'b0;
@@ -298,8 +286,7 @@ module Control_unit(opcode,
             Branch <= 1'b0;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'bz;
-            ALUOp0 <= 1'b0;
-            ALUOp1 <= 1'b0;
+            ALUOp <= 3'b000;
             JALOp <= 1'b0;
             ALUSrc <= 1'b1;
             AUIPCOp0 <= 1'b0;
@@ -313,8 +300,7 @@ module Control_unit(opcode,
                 Branch <= 1'b0;
 	            MemReadWrite <= 1'b0;
 	            MemtoReg <= 2'b10;
-	            ALUOp0 <= 1'b1;
-	            ALUOp1 <= 1'b1;
+	            ALUOp <= 3'b011;
 	            JALOp <= 1'b0;
 	            ALUSrc <= 1'b1;
 	            AUIPCOp0 <= 1'b0;
@@ -327,8 +313,7 @@ module Control_unit(opcode,
                 Branch <= 1'b0;
 	            MemReadWrite <= 1'b0;
 	            MemtoReg <= 2'b10;
-	            ALUOp0 <= 1'b0;
-	            ALUOp1 <= 1'b0;
+	            ALUOp <= 3'b000;
 	            JALOp <= 1'b0;
 	            ALUSrc <= 1'b1;
 	            AUIPCOp0 <= 1'b0;
@@ -530,7 +515,7 @@ endmodule
 module ALU(mode, in_A, in_B, out, zeroALU);
     // Todo: your HW3
     // Definition of ports
-    input  [1:0]  mode;
+    input  [2:0]  mode;
     input  [31:0] in_A, in_B;
     output [31:0] out;
     output reg zeroALU;
@@ -538,10 +523,10 @@ module ALU(mode, in_A, in_B, out, zeroALU);
     reg  [63:0] shreg;
     reg  [32:0] alu_out;
 
-    parameter ADD = 2'b00;
-    parameter MULT = 2'b01;
-    parameter SUB = 2'b10;
-    parameter COMPARE = 2'b11;
+    parameter ADD = 3'b000;
+    parameter SUB = 3'b001;
+    parameter MULT = 3'b010;
+    parameter COMPARE = 3'b011;
 
     integer i;
 
