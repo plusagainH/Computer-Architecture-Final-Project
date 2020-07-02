@@ -117,7 +117,8 @@ module CHIP(clk,
         .mode({aluOp1Wire,aluOp0Wire}), 
         .in_A(aluIn1), 
         .in_B(aluIn2), 
-        .out(aluOut));
+        .out(aluOut),
+        .zeroALU(zeroWire));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -252,7 +253,7 @@ module Control_unit(opcode,
             RegWrite <= 1'b0;
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
-            Branch <= 1'b0;
+            Branch <= 1'b1;
             MemReadWrite <= 1'b0;
             MemtoReg <= 2'bz;
             ALUOp0 <= 1'b0;
@@ -526,12 +527,13 @@ module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
     end
 endmodule
 
-module ALU(mode, in_A, in_B, out);
+module ALU(mode, in_A, in_B, out, zeroALU);
     // Todo: your HW3
     // Definition of ports
     input  [1:0]  mode;
     input  [31:0] in_A, in_B;
     output [31:0] out;
+    output reg zeroALU;
 
     reg  [63:0] shreg;
     reg  [32:0] alu_out;
@@ -549,12 +551,20 @@ module ALU(mode, in_A, in_B, out);
         case(mode)
             ADD:begin
                 shreg =  in_A + in_B;
+                zeroALU = 1'b0;
             end
             SUB:begin
                 shreg =  in_A - in_B;
+                if (shreg==64'b0) begin
+                    zeroALU = 1'b1;
+                end
+                else begin
+                    zeroALU = 1'b0;
+                end
             end
             COMPARE:begin
-                shreg[0] =  (in_A<in_B) ? 1 : 0;
+                shreg =  (in_A<in_B) ? {{63{1'b0}},1'b1} : {64{1'b0}};
+                zeroALU = 1'b0;
             end
             MULT:begin
                 shreg = in_A;
@@ -566,6 +576,7 @@ module ALU(mode, in_A, in_B, out);
                     else
                         shreg = {1'b0, shreg[63:1]};
                 end
+                zeroALU = 1'b0;
             end
         endcase
     end
