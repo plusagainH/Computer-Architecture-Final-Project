@@ -243,20 +243,6 @@ module Control_unit(opcode,
             JALROp <= 1'b0;
             RegWrite <= 1'b0;
         end
-<<<<<<< HEAD
-        else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
-            Branch <= 1'b1;
-            MemReadWrite <= 1'b0;
-            MemtoReg <= 2'bz;
-            ALUOp <= 3'b001;
-            JALOp <= 1'b0;
-            ALUSrc <= 1'b0;
-            AUIPCOp0 <= 1'b0;
-            AUIPCOp1 <= 1'b0;
-            ImmGenOp <= 3'b010;
-            JALROp <= 1'b0;
-            RegWrite <= 1'b0;
-=======
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq,bne
             if (!funct3[0]) begin  //beq
                 Branch <= 1'b1;
@@ -284,7 +270,6 @@ module Control_unit(opcode,
                 JALROp <= 1'b0;
                 RegWrite <= 1'b0;
             end
->>>>>>> 17995a653f7a5dde38839074d2e90c7215cc7b6b
         end
         else if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
             Branch <= 1'b0;
@@ -570,11 +555,8 @@ module ALU(mode, in_A, in_B, out, zeroALU);
     parameter SUB = 3'b001;
     parameter MULT = 3'b010;
     parameter COMPARE = 3'b011;
-<<<<<<< HEAD
-=======
     parameter BNE = 3'b100;
     parameter SRLI = 3'b101;
->>>>>>> 17995a653f7a5dde38839074d2e90c7215cc7b6b
 
     integer i;
 
