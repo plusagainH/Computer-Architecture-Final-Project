@@ -141,11 +141,8 @@ module CHIP(clk,
         end
         else begin
             PC <= PC_nxt;
-<<<<<<< HEAD
-            $display(PC);
-=======
-            //$display(aluIn1);
->>>>>>> a584227da1d11d89a7be347331205d54e5684b03
+            //$display("%h",PC);
+            //$display("x5 value:%h",mem_data.mem[5]);
         end
     end
 endmodule
@@ -277,7 +274,7 @@ module Control_unit(opcode,
             ALUOp0 <= 1'b0;
             ALUOp1 <= 1'b0;
             JALOp <= 1'b0;
-            ALUSrc <= 1'b1;
+            ALUSrc <= 1'bz;
             AUIPCOp0 <= 1'b1;
             AUIPCOp1 <= 1'b1;
             ImmGenOp <= 3'b011;
@@ -354,7 +351,7 @@ module Program_counter(address, immGen, aluResult, address_nxt, BranchPC, ZeroPC
     input JALOpPC;
     input JALROpPC;
     output reg [31:0] address_nxt;
-    always @(address or immGen or aluResult) begin
+    always @(address or immGen or aluResult or JALROpPC or BranchPC or ZeroPC or JALOpPC) begin
     	if (!JALROpPC) begin
     		if ((BranchPC && ZeroPC) || JALOpPC)begin
 	            address_nxt = address + (immGen << 1);
@@ -450,24 +447,23 @@ module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
 	input [31:0] pc, rd1, rd2, imm;
 	input asrc,auipc0, auipc1;
 	output reg [31:0] o1, o2;
-	always @(pc or rd1 or rd2 or imm) begin
+	always @(pc or rd1 or rd2 or imm or auipc0 or auipc1 or asrc) begin
 		if (auipc0==1'b1) begin
-			o1 = pc;
-			//$display(o1);
+			o1 <= pc;
 		end
 		else begin
-			o1 = rd1;
+			o1 <= rd1;
 		end
 		if (auipc1==1'b0) begin
 			if (asrc==1'b0) begin
-				o2 = rd2;
+				o2 <= rd2;
 			end
 			else begin
-				o2 = imm;
+				o2 <= imm;
 			end
 		end
 		else begin
-			o2 = imm << 12;
+			o2 <= imm <<< 12;
 		end
 	end
 endmodule
@@ -539,7 +535,7 @@ module ALU(mode, in_A, in_B, out);
     input  [31:0] in_A, in_B;
     output [63:0] out;
 
-    reg  [63:0] shreg;
+    reg  [63:0] shreg = 64'b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
     reg  [32:0] alu_out;
 
     parameter ADD = 2'b00;
@@ -554,16 +550,16 @@ module ALU(mode, in_A, in_B, out);
     always @(in_A or in_B) begin
         case(mode)
             ADD:begin
-                shreg =  in_A + in_B;
+                shreg[31:0] =  in_A + in_B;
             end
             SUB:begin
-                shreg =  in_A - in_B;
+                shreg[31:0] =  in_A - in_B;
             end
             COMPARE:begin
                 shreg[0] =  (in_A<in_B) ? 1 : 0;
             end
             MULT:begin
-                shreg = in_A;
+                shreg[31:0] = in_A;
                 for (i=0; i<32; i=i+1) begin
                     if (shreg[0]) begin
                         alu_out = shreg[63:32] + in_B;
