@@ -584,7 +584,7 @@ module ALU(mode, in_A, in_B, out, zeroALU);
             MULT:begin
                 shreg[0] = in_A;
                 for (i=0; i<32; i=i+1) begin
-                    if (shreg[0]) begin
+                    if (shreg[i][0]) begin
                         alu_out = shreg[i][63:32] + in_B;
                         shreg[i+1] = {alu_out, shreg[i][31:1]};
                     end
