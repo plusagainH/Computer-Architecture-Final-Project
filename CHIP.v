@@ -117,7 +117,8 @@ module CHIP(clk,
         .mode({aluOp1Wire,aluOp0Wire}), 
         .in_A(aluIn1), 
         .in_B(aluIn2), 
-        .out(aluOut));
+        .out(aluOut),
+        .zeroALU(zeroWire));
 
     //---------------------------------------//
     // Do not modify this part!!!            //
@@ -141,8 +142,11 @@ module CHIP(clk,
         end
         else begin
             PC <= PC_nxt;
+<<<<<<< HEAD
             //$display("%h",PC);
             //$display("x5 value:%h",mem_data.mem[5]);
+=======
+>>>>>>> 907b1fbe54ddf4a4b61470f7426b3ae05ec9f411
         end
     end
 endmodule
@@ -180,9 +184,9 @@ module Control_unit(opcode,
     
     always @(opcode or funct7 or funct3) begin
         if(!opcode[6]&&opcode[5]&&opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //add,sub,mul
-            if(funct7[2])begin //sub
+            if(funct7[5])begin //sub
                 Branch <= 1'b0;
-                MemReadWrite <= 1'bz;
+                MemReadWrite <= 1'b0;
                 MemtoReg <= 2'b10;
                 ALUOp0 <= 1'b0;
                 ALUOp1 <= 1'b1;
@@ -197,7 +201,7 @@ module Control_unit(opcode,
             else begin //add,mul
                 if(funct7[0])begin //mul
                     Branch <= 1'b0;
-	                MemReadWrite <= 1'bz;
+	                MemReadWrite <= 1'b0;
 	                MemtoReg <= 2'b10;
 	                ALUOp0 <= 1'b1;
 	                ALUOp1 <= 1'b0;
@@ -211,7 +215,7 @@ module Control_unit(opcode,
                 end
                 else begin //add
                     Branch <= 1'b0;
-	                MemReadWrite <= 1'bz;
+	                MemReadWrite <= 1'b0;
 	                MemtoReg <= 2'b10;
 	                ALUOp0 <= 1'b0;
 	                ALUOp1 <= 1'b0;
@@ -254,8 +258,8 @@ module Control_unit(opcode,
             RegWrite <= 1'b0;
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
-            Branch <= 1'b0;
-            MemReadWrite <= 1'bz;
+            Branch <= 1'b1;
+            MemReadWrite <= 1'b0;
             MemtoReg <= 2'bz;
             ALUOp0 <= 1'b0;
             ALUOp1 <= 1'b1;
@@ -269,7 +273,7 @@ module Control_unit(opcode,
         end
         else if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
             Branch <= 1'b0;
-            MemReadWrite <= 1'bz;
+            MemReadWrite <= 1'b0;
             MemtoReg <= 2'b10;
             ALUOp0 <= 1'b0;
             ALUOp1 <= 1'b0;
@@ -283,7 +287,7 @@ module Control_unit(opcode,
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jal
             Branch <= 1'b0;
-            MemReadWrite <= 1'bz;
+            MemReadWrite <= 1'b0;
             MemtoReg <= 2'b01;
             ALUOp0 <= 1'bz;
             ALUOp1 <= 1'bz;
@@ -297,7 +301,7 @@ module Control_unit(opcode,
         end
         else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //jalr
             Branch <= 1'b0;
-            MemReadWrite <= 1'bz;
+            MemReadWrite <= 1'b0;
             MemtoReg <= 2'bz;
             ALUOp0 <= 1'b0;
             ALUOp1 <= 1'b0;
@@ -312,7 +316,7 @@ module Control_unit(opcode,
         else begin //addi,slti
             if(funct3[1])begin //slti
                 Branch <= 1'b0;
-	            MemReadWrite <= 1'bz;
+	            MemReadWrite <= 1'b0;
 	            MemtoReg <= 2'b10;
 	            ALUOp0 <= 1'b1;
 	            ALUOp1 <= 1'b1;
@@ -326,7 +330,7 @@ module Control_unit(opcode,
             end
             else begin //addi
                 Branch <= 1'b0;
-	            MemReadWrite <= 1'bz;
+	            MemReadWrite <= 1'b0;
 	            MemtoReg <= 2'b10;
 	            ALUOp0 <= 1'b0;
 	            ALUOp1 <= 1'b0;
@@ -447,9 +451,15 @@ module Middle_stage(pc,rd1,rd2,imm,asrc,auipc0,auipc1,o1,o2);
 	input [31:0] pc, rd1, rd2, imm;
 	input asrc,auipc0, auipc1;
 	output reg [31:0] o1, o2;
+<<<<<<< HEAD
 	always @(pc or rd1 or rd2 or imm or auipc0 or auipc1 or asrc) begin
 		if (auipc0==1'b1) begin
 			o1 <= pc;
+=======
+	always @(pc or rd1 or rd2 or imm or auipc0 or auipc1) begin
+		if (auipc0==1'b1) begin
+			o1 = pc;
+>>>>>>> 907b1fbe54ddf4a4b61470f7426b3ae05ec9f411
 		end
 		else begin
 			o1 <= rd1;
@@ -528,12 +538,13 @@ module reg_file(clk, rst_n, wen, a1, a2, aw, d, q1, q2);
     end
 endmodule
 
-module ALU(mode, in_A, in_B, out);
+module ALU(mode, in_A, in_B, out, zeroALU);
     // Todo: your HW3
     // Definition of ports
     input  [1:0]  mode;
     input  [31:0] in_A, in_B;
-    output [63:0] out;
+    output [31:0] out;
+    output reg zeroALU;
 
     reg  [63:0] shreg = 64'b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
     reg  [32:0] alu_out;
@@ -547,16 +558,31 @@ module ALU(mode, in_A, in_B, out);
 
     assign out = shreg[31:0]; 
 
-    always @(in_A or in_B) begin
+    always @(in_A or in_B or mode) begin
         case(mode)
             ADD:begin
+<<<<<<< HEAD
                 shreg[31:0] =  in_A + in_B;
             end
             SUB:begin
                 shreg[31:0] =  in_A - in_B;
+=======
+                shreg =  in_A + in_B;
+                zeroALU = 1'b0;
+            end
+            SUB:begin
+                shreg =  in_A - in_B;
+                if (shreg==64'b0) begin
+                    zeroALU = 1'b1;
+                end
+                else begin
+                    zeroALU = 1'b0;
+                end
+>>>>>>> 907b1fbe54ddf4a4b61470f7426b3ae05ec9f411
             end
             COMPARE:begin
-                shreg[0] =  (in_A<in_B) ? 1 : 0;
+                shreg =  (in_A<in_B) ? {{63{1'b0}},1'b1} : {64{1'b0}};
+                zeroALU = 1'b0;
             end
             MULT:begin
                 shreg[31:0] = in_A;
@@ -568,6 +594,7 @@ module ALU(mode, in_A, in_B, out);
                     else
                         shreg = {1'b0, shreg[63:1]};
                 end
+                zeroALU = 1'b0;
             end
         endcase
     end
