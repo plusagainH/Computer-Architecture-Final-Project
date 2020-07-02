@@ -243,18 +243,33 @@ module Control_unit(opcode,
             JALROp <= 1'b0;
             RegWrite <= 1'b0;
         end
-        else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq
-            Branch <= 1'b1;
-            MemReadWrite <= 1'b0;
-            MemtoReg <= 2'bz;
-            ALUOp <= 3'b001;
-            JALOp <= 1'b0;
-            ALUSrc <= 1'b0;
-            AUIPCOp0 <= 1'b0;
-            AUIPCOp1 <= 1'b0;
-            ImmGenOp <= 3'b010;
-            JALROp <= 1'b0;
-            RegWrite <= 1'b0;
+        else if(opcode[6]&&opcode[5]&&!opcode[4]&&!opcode[3]&&!opcode[2]&&opcode[1]&&opcode[0])begin //beq,bne
+            if (!funct3[0]) begin  //beq
+                Branch <= 1'b1;
+                MemReadWrite <= 1'b0;
+                MemtoReg <= 2'bz;
+                ALUOp <= 3'b001;
+                JALOp <= 1'b0;
+                ALUSrc <= 1'b0;
+                AUIPCOp0 <= 1'b0;
+                AUIPCOp1 <= 1'b0;
+                ImmGenOp <= 3'b010;
+                JALROp <= 1'b0;
+                RegWrite <= 1'b0;
+            end
+            else begin  //bne
+                Branch <= 1'b1;
+                MemReadWrite <= 1'b0;
+                MemtoReg <= 2'bz;
+                ALUOp <= 3'b100;
+                JALOp <= 1'b0;
+                ALUSrc <= 1'b0;
+                AUIPCOp0 <= 1'b0;
+                AUIPCOp1 <= 1'b0;
+                ImmGenOp <= 3'b010;
+                JALROp <= 1'b0;
+                RegWrite <= 1'b0;
+            end
         end
         else if(!opcode[6]&&!opcode[5]&&opcode[4]&&!opcode[3]&&opcode[2]&&opcode[1]&&opcode[0])begin //auipc
             Branch <= 1'b0;
@@ -295,8 +310,21 @@ module Control_unit(opcode,
             JALROp <= 1'b1;
             RegWrite <= 1'b0;
         end
-        else begin //addi,slti
-            if(funct3[1])begin //slti
+        else begin //addi,slti,srli
+            if (funct3[2]) begin //srli
+                Branch <= 1'b0;
+                MemReadWrite <= 1'b0;
+                MemtoReg <= 2'b10;
+                ALUOp <= 3'b101;
+                JALOp <= 1'b0;
+                ALUSrc <= 1'b1;
+                AUIPCOp0 <= 1'b0;
+                AUIPCOp1 <= 1'b0;
+                ImmGenOp <= 3'b000;
+                JALROp <= 1'b0;
+                RegWrite <= 1'b1;
+            end
+            else if(funct3[1])begin //slti
                 Branch <= 1'b0;
 	            MemReadWrite <= 1'b0;
 	            MemtoReg <= 2'b10;
@@ -527,6 +555,8 @@ module ALU(mode, in_A, in_B, out, zeroALU);
     parameter SUB = 3'b001;
     parameter MULT = 3'b010;
     parameter COMPARE = 3'b011;
+    parameter BNE = 3'b100;
+    parameter SRLI = 3'b101;
 
     integer i;
 
@@ -562,6 +592,18 @@ module ALU(mode, in_A, in_B, out, zeroALU);
                         shreg = {1'b0, shreg[63:1]};
                 end
                 zeroALU = 1'b0;
+            end
+            BNE:begin
+                shreg =  in_A - in_B;
+                if (shreg==64'b0) begin
+                    zeroALU = 1'b0;
+                end
+                else begin
+                    zeroALU = 1'b1;
+                end
+            end
+            SRLI:begin
+                shreg = in_A >> in_B;
             end
         endcase
     end
