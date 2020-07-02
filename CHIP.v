@@ -549,6 +549,7 @@ module ALU(mode, in_A, in_B, out, zeroALU);
     output reg zeroALU;
 
     reg  [63:0] shreg;
+    reg  [63:0] shreg_nxt;
     reg  [32:0] alu_out;
 
     parameter ADD = 3'b000;
@@ -586,10 +587,12 @@ module ALU(mode, in_A, in_B, out, zeroALU);
                 for (i=0; i<32; i=i+1) begin
                     if (shreg[0]) begin
                         alu_out = shreg[63:32] + in_B;
-                        shreg = {alu_out, shreg[31:1]};
+                        shreg_nxt = {alu_out, shreg[31:1]};
+                        shreg = shreg_nxt;
                     end
                     else
-                        shreg = {1'b0, shreg[63:1]};
+                        shreg_nxt = {1'b0, shreg[63:1]};
+                        shreg = shreg_nxt;
                 end
                 zeroALU = 1'b0;
             end
