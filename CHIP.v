@@ -548,8 +548,7 @@ module ALU(mode, in_A, in_B, out, zeroALU);
     output [31:0] out;
     output reg zeroALU;
 
-    reg  [63:0] shreg;
-    reg  [63:0] shreg_nxt;
+    reg  [63:0] shreg [0:32];
     reg  [32:0] alu_out;
 
     parameter ADD = 3'b000;
@@ -561,17 +560,17 @@ module ALU(mode, in_A, in_B, out, zeroALU);
 
     integer i;
 
-    assign out = shreg[31:0]; 
+    assign out = shreg[32][31:0]; 
 
     always @(in_A or in_B or mode) begin
         case(mode)
             ADD:begin
-                shreg =  in_A + in_B;
+                shreg[32] =  in_A + in_B;
                 zeroALU = 1'b0;
             end
             SUB:begin
-                shreg =  in_A - in_B;
-                if (shreg==64'b0) begin
+                shreg[32] =  in_A - in_B;
+                if (shreg[32]==64'b0) begin
                     zeroALU = 1'b1;
                 end
                 else begin
@@ -579,26 +578,24 @@ module ALU(mode, in_A, in_B, out, zeroALU);
                 end
             end
             COMPARE:begin
-                shreg =  (in_A<in_B) ? {{63{1'b0}},1'b1} : {64{1'b0}};
+                shreg[32] =  (in_A<in_B) ? {{63{1'b0}},1'b1} : {64{1'b0}};
                 zeroALU = 1'b0;
             end
             MULT:begin
-                shreg = in_A;
+                shreg[0] = in_A;
                 for (i=0; i<32; i=i+1) begin
                     if (shreg[0]) begin
-                        alu_out = shreg[63:32] + in_B;
-                        shreg_nxt = {alu_out, shreg[31:1]};
-                        shreg = shreg_nxt;
+                        alu_out = shreg[i][63:32] + in_B;
+                        shreg[i+1] = {alu_out, shreg[i][31:1]};
                     end
                     else
-                        shreg_nxt = {1'b0, shreg[63:1]};
-                        shreg = shreg_nxt;
+                        shreg[i+1] = {1'b0, shreg[i][63:1]};
                 end
                 zeroALU = 1'b0;
             end
             BNE:begin
-                shreg =  in_A - in_B;
-                if (shreg==64'b0) begin
+                shreg[32] =  in_A - in_B;
+                if (shreg[32]==64'b0) begin
                     zeroALU = 1'b0;
                 end
                 else begin
@@ -606,7 +603,8 @@ module ALU(mode, in_A, in_B, out, zeroALU);
                 end
             end
             SRLI:begin
-                shreg = in_A >> in_B;
+                zeroALU = 1'b0;
+                shreg[32] = in_A >> in_B;
             end
         endcase
     end
